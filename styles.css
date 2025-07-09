@@ -1,0 +1,27 @@
+body {
+    display: flex;
+    justify-content: center;
+}
+.grid-container {
+    border: 1px solid red;
+    width: 50%;
+    height: 100vh;
+
+    display: grid;
+    grid-template-rows: 1fr 1fr 1fr 1fr;
+}
+.row {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+}
+
+.cell {
+    background-color: rgb(211, 142, 142);
+    border: 1px solid black;
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    margin: 1px;
+}

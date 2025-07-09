@@ -16,19 +16,8 @@ const Player = function (name, mark) {
     return {getName, getMark, getTurn, setTurn};
 }
 
-
 const Gameboard = (function () {
-    let gameboard = [
-        [],
-        [],
-        []
-    ];
-
-    gameboard.forEach((element) => {
-        element[0] = '';
-        element[1] = '';
-        element[2] = '';
-    })
+    let gameboard = [['', '', ''], ['', '', ''], ['', '', '']];
 
     let numberOfMoves = 0;
     const getNumberOfMoves = () => numberOfMoves;
@@ -41,10 +30,11 @@ const Gameboard = (function () {
         setNumberOfMoves();
     }
     const getBoard = () => gameboard;
-
-    return {getNumberOfMoves, setNumberOfMoves, setBoard, getBoard};
+    const resetBoard = () => gameboard = [['', '', ''], ['', '', ''], ['', '', '']];
+    return {getNumberOfMoves, setNumberOfMoves, setBoard, getBoard, resetBoard};
 
 })();
+
 
 const Game = (function () {
     console.log("Welcome to tic tac toe game");
@@ -54,88 +44,139 @@ const Game = (function () {
     
     playerOne.setTurn(); // set human player to play first
 
-    const handleTurns = () => {
-        console.log("Here")
-        let move, row, column;
-        // because first turn is for human player. a better solution is to have a global variable or passing the correct function here from somewhere else 
-        let playerMark = playerOne.getMark(); 
-        let playerName = playerOne.getName();
+    const handleTurns = (element) => {
+        let row, column;
+        let playerMark, playerName;
+        let gameboard = Gameboard.getBoard();
+        if (playerOne.getTurn()) {
+            playerMark = playerOne.getMark();
+            playerName = playerOne.getName();
 
-        while (Gameboard.getNumberOfMoves() < 18 && !determineWinner(playerMark, playerName)) {
-            let gameboard = Gameboard.getBoard();
-            if (playerOne.getTurn()) {
-                playerMark = playerOne.getMark();
-                playerName = playerOne.getName();
-
-                move = prompt("Enter position of move, for example: 0,1 (first row, second column) ").split(','); // TODO: needs error checking;
-                [row, column] = move;
-                
-                Gameboard.setBoard(row, column, playerMark)
-                
-                playerOne.setTurn();
-                playerTwo.setTurn();
+            row = element.target.parentElement.classList[1].split('-')[1];
+            column = element.target.classList[1].split('-')[1];
+            if (gameboard[row][column] === 'X' || gameboard[row][column] === 'O') {
+                console.log('grid already is filled');
             } else {
-                playerMark = playerTwo.getMark();
-                playerName = playerTwo.getName();
+                Gameboard.setBoard(row, column, playerMark);
+                DisplayController.draw(row, column, playerMark);
 
-                do {
-                    move = [(Math.trunc(Math.random() * 10)) % 3, (Math.trunc(Math.random() * 10)) % 3];
-                    [row, column] = move;
-                } while (gameboard[row][column] === 'X' || gameboard[row][column] === 'O');
-
-                Gameboard.setBoard(row, column, playerMark)
-                
-                playerTwo.setTurn();
                 playerOne.setTurn();
+                playerTwo.setTurn();
             }
-            Gameboard.setBoard(row, column, playerMark);
         }
+        if (Gameboard.getNumberOfMoves() >= 5 && determineWinner(playerMark, playerName)) {
+            playerOne.setTurn();
+            playerTwo.setTurn();
+
+            Gameboard.resetBoard();
+            DisplayController.resetGrid();
+        }  
+        if (playerTwo.getTurn()) {
+            
+            playerMark = playerTwo.getMark();
+            playerName = playerTwo.getName();
+            
+            do {
+                [row, column] = [(Math.trunc(Math.random() * 10)) % 3, (Math.trunc(Math.random() * 10)) % 3];
+            } while (gameboard[row][column] === 'X' || gameboard[row][column] === 'O');
+            
+            Gameboard.setBoard(row, column, playerMark);
+            DisplayController.draw(row, column, playerMark);
+
+            playerTwo.setTurn();
+            playerOne.setTurn();
+        }
+        console.log(gameboard);
+
     };
 
     const determineWinner = (playerMark, playerName) => {
         let gameboard = Gameboard.getBoard();
-        console.log(gameboard);
-        // check vertical win conditions
+
         const verticalWinConditions = 3;
-        let verticalWinBool = true;
+        let verticalWinBool = false;
+        let verticalArr = [];
         let index = 0;
-        while (index < verticalWinConditions && verticalWinBool) {
-            gameboard.forEach((element, arrIndex) => {
-                console.log(element ," + ", arrIndex);
-                console.log(element[index]); 
-                if (element[index] !== playerMark) verticalWinBool = false; // logic problem
+        // check vertical win condition
+        while (index < verticalWinConditions && !verticalWinBool) {
+            gameboard.forEach((element) => {
+                verticalArr.push(element[index]);
             });
+            console.log("Vertical arr: ", verticalArr);
+            if (verticalArr.every((element) => element === playerMark)) verticalWinBool = true;
+            console.log("Player mark: ", playerMark);
+            verticalArr = [];
             index++;
-        };
-        // check horizontal win conditons
-        let horizontalWinBool = true;
-        gameboard.forEach((outElement) => {
-            outElement.forEach((element) => {
-                if (element !== playerMark) horizontalWinBool = false;
-            });
-        });
-        // check diagonal win conditions
-        const diagonalWinConditions = 2;
-        let diagonalWinBool = true;
-        index = 0;
-        while (index < diagonalWinConditions && diagonalWinBool) {
-            gameboard.forEach((element) => {
-                if (element[index] !== playerMark) diagonalWinBool = false;
-                index++;
-            });
-            index = -1;
-            gameboard.forEach((element) => {
-                if (element[index] !== playerMark) diagonalWinBool = false;
-                index--;
-            })
-            index = Math.abs(index);
         }
-        console.log(`Winning conditions are. vertical; ${verticalWinBool}, horizontal: ${horizontalWinBool}, diagonal: ${diagonalWinBool}`);
+        // check horizontal win condition
+        let horizontalWinBool = false;
+        let horizontalArr = [];
+        gameboard.forEach((outerElement) => {
+            outerElement.forEach((element) =>{
+                horizontalArr.push(element);
+            });
+            if (horizontalArr.every((element) => element === playerMark)) horizontalWinBool = true;
+            horizontalArr = [];
+        });
+        // check diagonal win condition, first in left to right order then in reverse
+        let diagonalWinBool = false;
+        let daigonalArr = [];
+        index = 0;
+        gameboard.forEach((outerElement) => {
+            daigonalArr.push(outerElement[index]);
+            index++;
+        });
+        if (daigonalArr.every((element) => element === playerMark)) diagonalWinBool = true;
+        daigonalArr = [];
+        index = -1;
+        gameboard.forEach((outerElement) => {
+            daigonalArr.push(outerElement.at(index));
+            index--;
+        });
+        if (daigonalArr.every((element) => element === playerMark)) diagonalWinBool = true;
+
+        // check if any win condition is true, declare winner and return true.
+        console.log(`Vertical Win state: ${verticalWinBool} || Horizontal Win state: ${horizontalWinBool} || Diagonal Win state: ${diagonalWinBool}`);
         if (verticalWinBool || horizontalWinBool || diagonalWinBool) {
-            console.log(`We have a winner. Winner is ${playerName}`);
+            console.log(`We have a winner ${playerName}, ${playerMark}`);
             return true;
         }
         return false;
-    };
-    handleTurns();
+    }
+
+    return {handleTurns};
+})();
+
+const DisplayController = (function () {
+    const gridContainer = document.querySelector('.grid-container');
+
+    const CELLCOUNT = 3;
+    const ROWCOUNT = 3;
+    const createGrid = () => {
+        for (let rowCounter = 0; rowCounter < ROWCOUNT; rowCounter++) {
+            let row = document.createElement('div');
+            row.classList.add(`row` ,`row-${rowCounter}`);
+
+            for (let cellCounter = 0; cellCounter < CELLCOUNT; cellCounter++) {
+                let cell = document.createElement('div');
+                cell.classList.add(`cell`, `cell-${cellCounter}`);
+                cell.innerText = '';
+                cell.addEventListener('click', Game.handleTurns);
+                row.append(cell);
+                gridContainer.append(row);
+            };
+        }
+    }
+    const draw = (row, column, playerMark) => {
+        gridContainer.children[row].children[column].innerText = playerMark;
+    }
+    const resetGrid = () => {
+        gridContainer.childNodes.forEach((element) => {
+            element.childNodes.forEach((innerElement) => {
+                innerElement.innerText = '';
+            })
+        });
+    }
+    createGrid();
+    return {draw, resetGrid};
 })();
